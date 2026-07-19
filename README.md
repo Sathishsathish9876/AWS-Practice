@@ -11,12 +11,17 @@ This is a full-stack Simple App containing a **NestJS Backend**, **Next.js Front
 ## Running with Docker (Recommended)
 
 1. Ensure Docker and Docker Compose are installed.
-2. In the root directory, run:
-   ```bash
-   docker-compose up -d
+2. Create a `.env` file in the **root** directory (next to `docker-compose.yml`) and add:
+   ```env
+   NEXT_PUBLIC_API_URL=http://localhost:3001
    ```
-3. Frontend will be available at `http://localhost:3000`
-4. Backend API will be available at `http://localhost:3001` (Swagger docs at `/docs`)
+3. In the root directory, run:
+   ```bash
+   docker-compose up -d --build
+   ```
+4. Frontend will be available at `http://localhost:3000`
+5. Backend API will be available at `http://localhost:3001` (Swagger docs at `/docs`)
+6. MongoDB database can be accessed via `mongodb://localhost:27018` (Port is mapped to 27018 to avoid conflicts with any local MongoDB services).
 
 ---
 
