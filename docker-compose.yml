@@ -5,7 +5,7 @@ services:
     image: mongo:7.0
     container_name: mongodb
     ports:
-      - "27017:27017"
+      - "27018:27017"
     volumes:
       - mongodb_data:/data/db
     networks:
@@ -25,10 +25,8 @@ services:
     container_name: backend
     ports:
       - "3001:3001"
-    environment:
-      - PORT=3001
-      - MONGODB_URI=mongodb://mongodb:27017/simple-app
-      - NODE_ENV=production
+    env_file:
+      - ./backend/.env.production    # backend/.env.production → container-க்கு load ஆகும்
     networks:
       - app-network
     depends_on:
@@ -46,12 +44,13 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
     container_name: frontend
     ports:
       - "3000:3000"
-    environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:3001
-      - NODE_ENV=production
+    env_file:
+      - ./frontend/.env.production    # frontend/.env.production → container-க்கு load ஆகும்
     networks:
       - app-network
     depends_on:
