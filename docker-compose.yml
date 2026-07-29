@@ -4,14 +4,12 @@ version: '3.8'
 
 services:
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: 714046701725.dkr.ecr.ap-south-1.amazonaws.com/nest-backend:latest  # ✅ ECR Image URL Attached
     container_name: backend
     ports:
       - "3001:3001"
     env_file:
-      - ./backend/.env.production    # Atlas DATABASE_URL idhulendhu load aagum
+      - ./backend/.env.production    # Database credentials/ENV variables
     networks:
       - app-network
     restart: unless-stopped
@@ -43,11 +41,6 @@ services:
 networks:
   app-network:
     driver: bridge
-
-
-
-
-
 
 
 
