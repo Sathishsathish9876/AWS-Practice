@@ -1,41 +1,119 @@
+# Aws RDS config
+
 version: '3.8'
 
 services:
-  mongodb:
-    image: mongo:latest
-    container_name: mongodb
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongodb_data:/data/db
-    restart: always
-
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: 714046701725.dkr.ecr.ap-south-1.amazonaws.com/nest-backend:latest  # ✅ ECR Image URL Attached
     container_name: backend
     ports:
       - "3001:3001"
-    environment:
-      - PORT=3001
-      - MONGODB_URI=mongodb://mongodb:27017/simple-app
-    depends_on:
-      - mongodb
-    restart: always
+    env_file:
+      - ./backend/.env.production    # Database credentials/ENV variables
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
     container_name: frontend
     ports:
       - "3000:3000"
-    environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:3001
+    env_file:
+      - ./frontend/.env.production
+    networks:
+      - app-network
     depends_on:
-      - backend
-    restart: always
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
 
-volumes:
-  mongodb_data:
+networks:
+  app-network:
+    driver: bridge
+
+
+
+
+
+# Docker integrations with AWS EC2 using docker compose
+
+# version: '3.8'
+
+# services:
+#   mongodb:
+#     image: mongo:7.0
+#     container_name: mongodb
+#     ports:
+#       - "27018:27017"
+#     volumes:
+#       - mongodb_data:/data/db
+#     networks:
+#       - app-network
+#     restart: unless-stopped
+#     healthcheck:
+#       test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+#       interval: 10s
+#       timeout: 5s
+#       retries: 5
+#       start_period: 10s
+
+#   backend:
+#     build:
+#       context: ./backend
+#       dockerfile: Dockerfile
+#     container_name: backend
+#     ports:
+#       - "3001:3001"
+#     env_file:
+#       - ./backend/.env.production    # backend/.env.production → container-க்கு load ஆகும்
+#     environment:
+#       - MONGODB_URI=mongodb://mongodb:27017/simple-app
+#     networks:
+#       - app-network
+#     depends_on:
+#       mongodb:
+#         condition: service_healthy
+#     restart: unless-stopped
+#     healthcheck:
+#       test: ["CMD", "wget", "--spider", "-q", "http://localhost:3001/health"]
+#       interval: 10s
+#       timeout: 5s
+#       retries: 5
+#       start_period: 10s
+
+#   frontend:
+#     build:
+#       context: ./frontend
+#       dockerfile: Dockerfile
+#       args:
+#         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+#     container_name: frontend
+#     ports:
+#       - "3000:3000"
+#     env_file:
+#       - ./frontend/.env.production    # frontend/.env.production → container-க்கு load ஆகும்
+#     networks:
+#       - app-network
+#     depends_on:
+#       backend:
+#         condition: service_healthy
+#     restart: unless-stopped
+
+# networks:
+#   app-network:
+#     driver: bridge
+
+# volumes:
+#   mongodb_data:
+#     driver: local

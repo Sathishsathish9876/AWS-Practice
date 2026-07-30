@@ -36,6 +36,7 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchUsers();
   }, []);
 
@@ -109,7 +110,7 @@ export default function DashboardPage() {
         
       const method = editingId ? 'PATCH' : 'POST';
       
-      const payload: any = { name, email };
+      const payload: Record<string, string> = { name, email };
       if (password) {
         payload.password = password;
       }
