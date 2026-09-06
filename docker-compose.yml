@@ -1,24 +1,32 @@
-# Aws RDS config
-
+# Local development
 version: '3.8'
 
 services:
-  backend:
-    image: 714046701725.dkr.ecr.ap-south-1.amazonaws.com/nest-backend:latest  # ✅ ECR Image URL Attached
-    container_name: backend
+  mongodb:
+    image: mongo:7.0
+    container_name: mongodb
     ports:
-      - "3001:3001"
-    env_file:
-      - .env    # Database credentials/ENV variables
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
     networks:
       - app-network
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3001/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: backend
+    ports:
+      - "3001:3001"
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/todo-app # 👈 Direct-ஆ local mongo connection URI
+    networks:
+      - app-network
+    depends_on:
+      - mongodb
+    restart: unless-stopped
 
   frontend:
     build:
@@ -28,19 +36,115 @@ services:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
     container_name: frontend
     ports:
-      - "3000:3001"
+      - "3000:3000"
     env_file:
       - .env
     networks:
       - app-network
     depends_on:
-      backend:
-        condition: service_healthy
+      - backend
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3002:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    networks:
+      - app-network
     restart: unless-stopped
 
 networks:
   app-network:
     driver: bridge
+
+volumes:
+  mongodb_data:
+    driver: local
+
+
+
+
+
+
+# # Aws RDS config
+
+# version: '3.8'
+
+# services:
+#   backend:
+#     image: 714046701725.dkr.ecr.ap-south-1.amazonaws.com/nest-backend:latest
+#     container_name: backend
+#     ports:
+#       - "3001:3001"
+#     env_file:
+#       - .env
+#     networks:
+#       - app-network
+#     restart: unless-stopped
+#     healthcheck:
+#       test: ["CMD", "wget", "--spider", "-q", "http://localhost:3001/health"]
+#       interval: 10s
+#       timeout: 5s
+#       retries: 5
+#       start_period: 10s
+
+#   frontend:
+#     build:
+#       context: ./frontend
+#       dockerfile: Dockerfile
+#       args:
+#         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+#     container_name: frontend
+#     ports:
+#       - "3000:3000"  # ✅ Fixed container port to 3000
+#     env_file:
+#       - .env
+#     networks:
+#       - app-network
+#     depends_on:
+#       backend:
+#         condition: service_healthy
+#     restart: unless-stopped
+
+#   prometheus:
+#     image: prom/prometheus:latest
+#     container_name: prometheus
+#     ports:
+#       - "9090:9090"
+#     volumes:
+#       - ./prometheus.yml:/etc/prometheus/prometheus.yml
+#     networks:
+#       - app-network
+#     restart: unless-stopped
+
+#   grafana:
+#     image: grafana/grafana:latest
+#     container_name: grafana
+#     ports:
+#       - "3002:3000"  # ✅ Accessible locally at http://localhost:3002
+#     environment:
+#       - GF_SECURITY_ADMIN_PASSWORD=admin
+#     networks:
+#       - app-network
+#     restart: unless-stopped
+
+# networks:
+#   app-network:
+#     driver: bridge
 
 
 
